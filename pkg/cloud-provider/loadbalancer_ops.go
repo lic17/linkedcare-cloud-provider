@@ -1,9 +1,9 @@
 package cloud_provider
 
 import (
-	"context"
 	"fmt"
 
+	"github.com/denverdino/aliyungo/ecs"
 	"github.com/denverdino/aliyungo/slb"
 	"github.com/golang/glog"
 	v1 "k8s.io/api/core/v1"
@@ -11,10 +11,11 @@ import (
 )
 
 type LoadBalancerClient struct {
-	c slb.Client
+	c   *slb.Client
+	ins *ecs.Client
 }
 
-func (s *LoadBalancerClient) findLoadBalancer(ctx context.Context, clusterName string, service *v1.Service) (status *v1.LoadBalancerStatus, exists bool, err error) {
+func (s *LoadBalancerClient) findLoadBalancer(service *v1.Service) (bool, *slb.LoadBalancerType, error) {
 	def, _ := ExtractServiceAnnotation(service)
 	if def.Loadbalancerid != "" {
 		return s.findLoadBalancerByID(def.Loadbalancerid)
@@ -47,7 +48,7 @@ func (s *LoadBalancerClient) findLoadBalancerByID(lbid string) (bool, *slb.LoadB
 	return err == nil, lb, err
 }
 
-func (s *LoadBalancerClient) findLoadBalancerByName(service *v1.ServiceGetLoadBalancerName) (bool, *slb.LoadBalancerType, error) {
+func (s *LoadBalancerClient) findLoadBalancerByName(service *v1.Service) (bool, *slb.LoadBalancerType, error) {
 	if service.UID == "" {
 		return false, nil, fmt.Errorf("unexpected empty service uid")
 	}
@@ -74,12 +75,14 @@ func (s *LoadBalancerClient) findLoadBalancerByName(service *v1.ServiceGetLoadBa
 	return err == nil, lb, err
 }
 
-func EnsureLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, nodes []*v1.Node) (*v1.LoadBalancerStatus, error) {
+func (s *LoadBalancerClient) ensureLoadBalancer(service *v1.Service) (bool, *slb.LoadBalancerType, error) {
+	return s.findLoadBalancerByName(service)
 }
 
-func UpdateLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, nodes []*v1.Node) error {
+func (s *LoadBalancerClient) updateLoadBalancer(service *v1.Service) error {
+	return nil
 }
 
-func EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, service *v1.Service) error {
-
+func (s *LoadBalancerClient) ensureLoadBalancerDeleted(service *v1.Service) error {
+	return nil
 }

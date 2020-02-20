@@ -17,43 +17,71 @@ limitations under the License.
 package cloud_provider
 
 import (
+	b64 "encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+	"os"
 	"time"
 
+	"github.com/denverdino/aliyungo/common"
+	"github.com/denverdino/aliyungo/slb"
 	"github.com/golang/glog"
 	v1 "k8s.io/api/core/v1"
-	"k8s.io/client-go/informers"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/kubernetes/scheme"
 	v1core "k8s.io/client-go/kubernetes/typed/core/v1"
-	"k8s.io/client-go/tools/cache"
 	"k8s.io/client-go/tools/record"
 	"k8s.io/kubernetes/pkg/cloudprovider"
 	"k8s.io/kubernetes/pkg/controller"
+	"k8s.io/kubernetes/pkg/version"
 )
 
 // ProviderName is the name of this cloud provider.
 const ProviderName = "alicloud"
 
-// Baiducloud defines the main struct
+// CLUSTER_ID default cluster id if it is not specified.
+var CLUSTER_ID = "clusterid"
+
+// KUBERNETES_ALICLOUD_IDENTITY is for statistic purpose.
+var KUBERNETES_ALICLOUD_IDENTITY = fmt.Sprintf("Kubernetes.Alicloud/%s", version.Get().String())
+
+// Cloud defines the main struct
 type Cloud struct {
-	climgr *ClientMgr
-	CloudConfig
-	clientSet        clientset.Interface
+	climgr           *ClientMgr
+	cfg              *CloudConfig
+	region           common.Region
 	kubeClient       kubernetes.Interface
 	eventBroadcaster record.EventBroadcaster
 	eventRecorder    record.EventRecorder
 }
 
+var (
+	// DEFAULT_CHARGE_TYPE default charge type
+	DEFAULT_CHARGE_TYPE = common.PayByTraffic
+
+	// DEFAULT_BANDWIDTH default bandwidth
+	DEFAULT_BANDWIDTH = 100
+
+	// DEFAULT_ADDRESS_TYPE default address type
+	DEFAULT_ADDRESS_TYPE = slb.InternetAddressType
+
+	DEFAULT_NODE_MONITOR_PERIOD = 120 * time.Second
+
+	DEFAULT_NODE_ADDR_SYNC_PERIOD = 240 * time.Second
+
+	// DEFAULT_REGION should be override in cloud initialize.
+	DEFAULT_REGION = common.Hangzhou
+)
+
 // CloudConfig is the cloud config
 type CloudConfig struct {
+	UID             string `json:"uid"`
 	ClusterID       string `json:"ClusterId"`
 	ClusterName     string `json:"ClusterName"`
 	AccessKeyID     string `json:"AccessKeyID"`
-	SecretAccessKey string `json:"SecretAccessKey"`
+	AccessKeySecret string `json:"AccessKeySecret"`
 	Region          string `json:"Region"`
 	VpcID           string `json:"VpcId"`
 	SubnetID        string `json:"SubnetId"`
@@ -65,107 +93,82 @@ type CloudConfig struct {
 
 // CCMVersion is the version of CCM
 var CCMVersion string
+var cfg CloudConfig
 
 func init() {
-	cloudprovider.RegisterCloudProvider(ProviderName, func(configReader io.Reader) (cloudprovider.Interface, error) {
-		var cloud Baiducloud
-		var cloudConfig CloudConfig
-		configContents, err := ioutil.ReadAll(configReader)
-		if err != nil {
-			return nil, err
-		}
-		err = json.Unmarshal(configContents, &cloudConfig)
-		if err != nil {
-			return nil, err
-		}
-		glog.V(3).Infof("Init CCE cloud with cloudConfig: %v\n", cloudConfig)
-		if cloudConfig.MasterID == "" {
-			return nil, fmt.Errorf("Cloud config must have a Master ID\n")
-		}
-		if cloudConfig.ClusterID == "" {
-			return nil, fmt.Errorf("Cloud config must have a ClusterID\n")
-		}
-		if cloudConfig.Endpoint == "" {
-			return nil, fmt.Errorf("Cloud config must have a Endpoint\n")
-		}
-		cred := bce.NewCredentials(cloudConfig.AccessKeyID, cloudConfig.SecretAccessKey)
-		bceConfig := bce.NewConfig(cred)
-		bceConfig.Region = cloudConfig.Region
-		// timeout need to set
-		bceConfig.Timeout = 60 * time.Second
-		// fix endpoint
-		fixEndpoint := cloudConfig.Endpoint + "/internal-api"
-		bceConfig.Endpoint = fixEndpoint
-		// http request from cce's kubernetes has an useragent header
-		// example: useragent: cce-k8s:c-adfdf
-		bceConfig.UserAgent = CceUserAgent + cloudConfig.ClusterID
-		cloud.CloudConfig = cloudConfig
-		cloud.clientSet, err = clientset.NewFromConfig(bceConfig)
-		if err != nil {
-			return nil, err
-		}
-		cloud.clientSet.Blb().SetDebug(true)
-		cloud.clientSet.Eip().SetDebug(true)
-		cloud.clientSet.Bcc().SetDebug(true)
-		cloud.clientSet.Cce().SetDebug(true)
-		cloud.clientSet.Vpc().SetDebug(true)
-		return &cloud, nil
-	})
+	cloudprovider.RegisterCloudProvider(ProviderName,
+		func(config io.Reader) (cloudprovider.Interface, error) {
+			var (
+				keyid     = ""
+				keysecret = ""
+				rtableids = ""
+			)
+			if config != nil {
+				if err := json.NewDecoder(config).Decode(&cfg); err != nil {
+					return nil, err
+				}
+				if cfg.AccessKeyID != "" && cfg.AccessKeySecret != "" {
+					key, err := b64.StdEncoding.DecodeString(cfg.AccessKeyID)
+					if err != nil {
+						return nil, err
+					}
+					keyid = string(key)
+					secret, err := b64.StdEncoding.DecodeString(cfg.AccessKeySecret)
+					if err != nil {
+						return nil, err
+					}
+					keysecret = string(secret)
+					glog.V(2).Infof("Alicloud: Try Accesskey and AccessKeySecret from config file.")
+				}
+				if cfg.ClusterID != "" {
+					CLUSTER_ID = cfg.ClusterID
+					glog.Infof("use clusterid %s", CLUSTER_ID)
+				}
+			}
+			if keyid == "" || keysecret == "" {
+				glog.V(2).Infof("cloud config does not have keyid and keysecret . try environment ACCESS_KEY_ID ACCESS_KEY_SECRET")
+				keyid = os.Getenv("ACCESS_KEY_ID")
+				keysecret = os.Getenv("ACCESS_KEY_SECRET")
+			}
+			mgr, err := NewClientMgr(keyid, keysecret)
+			if err != nil {
+				return nil, err
+			}
+			// wait for client initialized
+			err = mgr.Start(RefreshToken)
+			if err != nil {
+				panic(fmt.Sprintf("token not ready %s", err.Error()))
+			}
+			return newAliCloud(mgr, rtableids)
+		})
+
 }
 
-// ProviderName returns the cloud provider ID.
-func (bc *Baiducloud) ProviderName() string {
-	return ProviderName
+func newAliCloud(mgr *ClientMgr, rtableids string) (*Cloud, error) {
+
+	region, err := mgr.MetaData().Region()
+	if err != nil {
+		return nil, errors.New("please provide region in " +
+			"Alicloud configuration file")
+	}
+	DEFAULT_REGION = common.Region(region)
+
+	return &Cloud{
+		climgr: mgr,
+		region: common.Region(region),
+		cfg:    &cfg,
+	}, nil
 }
 
 // Initialize provides the cloud with a kubernetes client builder and may spawn goroutines
 // to perform housekeeping activities within the cloud provider.
-func (bc *Baiducloud) Initialize(clientBuilder controller.ControllerClientBuilder) {
-	bc.kubeClient = clientBuilder.ClientOrDie(ProviderName)
-	bc.eventBroadcaster = record.NewBroadcaster()
-	bc.eventBroadcaster.StartLogging(glog.Infof)
-	bc.eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: bc.kubeClient.CoreV1().Events("")})
-	bc.eventRecorder = bc.eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "CCM"})
+func (c *Cloud) Initialize(builder controller.ControllerClientBuilder) {
+	c.kubeClient = builder.ClientOrDie(ProviderName)
+	c.eventBroadcaster = record.NewBroadcaster()
+	c.eventBroadcaster.StartLogging(glog.Infof)
+	c.eventBroadcaster.StartRecordingToSink(&v1core.EventSinkImpl{Interface: c.kubeClient.CoreV1().Events("")})
+	c.eventRecorder = c.eventBroadcaster.NewRecorder(scheme.Scheme, v1.EventSource{Component: "CCM"})
 }
-
-// SetInformers sets the informer on the cloud object.
-func (bc *Baiducloud) SetInformers(informerFactory informers.SharedInformerFactory) {
-	glog.V(3).Infof("Setting up informers for Baiducloud")
-	// node
-	nodeInformer := informerFactory.Core().V1().Nodes().Informer()
-	nodeInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			node := obj.(*v1.Node)
-			glog.V(3).Infof("nodeInformer node add: %v", node.Name)
-			// TODO: cache some node info
-		},
-		UpdateFunc: func(prev, obj interface{}) {
-			node := obj.(*v1.Node)
-			glog.V(5).Infof("nodeInformer node update: %v", node.Name)
-		},
-		DeleteFunc: func(obj interface{}) {
-			node := obj.(*v1.Node)
-			glog.V(3).Infof("nodeInformer node delete: %v", node.Name)
-			// TODO: remove node info from cache
-		},
-	})
-	// service
-	serviceInformer := informerFactory.Core().V1().Services().Informer()
-	serviceInformer.AddEventHandler(cache.ResourceEventHandlerFuncs{
-		AddFunc: func(obj interface{}) {
-			service := obj.(*v1.Service)
-			glog.V(3).Infof("serviceInformer service add: %v", service.Name)
-			// TODO: cache some service info
-		},
-		UpdateFunc: func(prev, obj interface{}) {
-			service := obj.(*v1.Service)
-			glog.V(3).Infof("serviceInformer service update: %v", service.Name)
-			// TODO:
-		},
-		DeleteFunc: func(obj interface{}) {
-			service := obj.(*v1.Service)
-			glog.V(3).Infof("serviceInformer service delete: %v", service.Name)
-			// TODO: remove service info from cache
-		},
-	})
+func (c *Cloud) ProviderName() string {
+	return ProviderName
 }

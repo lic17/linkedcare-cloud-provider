@@ -18,6 +18,7 @@ require (
 	github.com/emicklei/go-restful-swagger12 v0.0.0-20170208215640-dcef7f557305
 	github.com/evanphx/json-patch v4.2.0+incompatible
 	github.com/ghodss/yaml v1.0.0
+	github.com/go-cmd/cmd v1.2.0 // indirect
 	github.com/go-openapi/jsonpointer v0.17.2
 	github.com/go-openapi/jsonreference v0.17.2
 	github.com/go-openapi/spec v0.17.2
