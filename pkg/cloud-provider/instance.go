@@ -9,7 +9,7 @@ import (
 )
 
 func (c *Cloud) Instances() (cloudprovider.Instances, bool) {
-	return c, true
+	return c, false
 }
 
 func (c *Cloud) NodeAddresses(ctx context.Context, name types.NodeName) ([]v1.NodeAddress, error) {

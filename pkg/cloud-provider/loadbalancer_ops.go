@@ -28,7 +28,7 @@ func (s *LoadBalancerClient) findLoadBalancer(service *v1.Service) (bool, *slb.L
 func (s *LoadBalancerClient) findLoadBalancerByID(lbid string) (bool, *slb.LoadBalancer, error) {
 
 	request := slb.CreateDescribeLoadBalancersRequest()
-	request.Scheme = "https"
+	//request.Scheme = "https"
 	request.LoadBalancerId = lbid
 
 	res, err := s.c.DescribeLoadBalancers(request)
@@ -44,6 +44,8 @@ func (s *LoadBalancerClient) findLoadBalancerByID(lbid string) (bool, *slb.LoadB
 	if len(lbs) > 1 {
 		glog.Warningf("multiple loadbalancer returned with id [%s], using the first one with IP=%s", lbid, lbs[0].Address)
 	}
+
+	fmt.Println(lbs[0])
 	return err == nil, &lbs[0], err
 }
 
@@ -54,7 +56,7 @@ func (s *LoadBalancerClient) findLoadBalancerByName(service *v1.Service) (bool, 
 	name := cloudprovider.GetLoadBalancerName(service)
 
 	request := slb.CreateDescribeLoadBalancersRequest()
-	request.Scheme = "https"
+	//request.Scheme = "https"
 	request.LoadBalancerName = name
 	res, err := s.c.DescribeLoadBalancers(request)
 	lbs := res.LoadBalancers.LoadBalancer
@@ -70,6 +72,7 @@ func (s *LoadBalancerClient) findLoadBalancerByName(service *v1.Service) (bool, 
 		glog.Warningf("alicloud: multiple loadbalancer returned with name [%s], "+
 			"using the first one with IP=%s", name, lbs[0].Address)
 	}
+	fmt.Println(lbs[0])
 	return err == nil, &lbs[0], err
 }
 
@@ -129,7 +132,7 @@ func (s *LoadBalancerClient) ensureLoadBalancerDeleted(service *v1.Service) erro
 		return nil
 	}
 	request := slb.CreateDeleteLoadBalancerRequest()
-	request.Scheme = "https"
+	//request.Scheme = "https"
 
 	request.LoadBalancerId = lb.LoadBalancerId
 	_, err = s.c.DeleteLoadBalancer(request)

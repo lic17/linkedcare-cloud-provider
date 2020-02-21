@@ -55,6 +55,7 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, serv
 	if err != nil {
 		return nil, err
 	}
+	fmt.Println(lb)
 
 	//pz, pzr, err := c.climgr.PrivateZones().EnsurePrivateZoneRecord(service, lb.Address, defaulted.AddressIPVersion)
 	//if err != nil {
