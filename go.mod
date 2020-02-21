@@ -6,6 +6,7 @@ require (
 	github.com/NYTimes/gziphandler v1.0.1
 	github.com/PuerkitoBio/purell v1.1.0
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
+	github.com/aliyun/alibaba-cloud-sdk-go v1.60.387 // indirect
 	github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973
 	github.com/coreos/etcd v3.3.10+incompatible
 	github.com/coreos/go-semver v0.2.0

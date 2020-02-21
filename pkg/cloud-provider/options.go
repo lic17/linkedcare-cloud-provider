@@ -122,3 +122,12 @@ func ExtractNodeAnnotation(node *v1.Node) (*NodeAnnotation, error) {
 
 	return result, nil
 }
+
+func serviceAnnotation(service *v1.Service, annotate string) string {
+	for k, v := range service.Annotations {
+		if annotate == k {
+			return v
+		}
+	}
+	return ""
+}

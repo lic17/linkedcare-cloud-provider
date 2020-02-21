@@ -19,14 +19,11 @@ package cloud_provider
 import (
 	b64 "encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"os"
 	"time"
 
-	"github.com/denverdino/aliyungo/common"
-	"github.com/denverdino/aliyungo/slb"
 	"github.com/golang/glog"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/client-go/kubernetes"
@@ -51,7 +48,6 @@ var KUBERNETES_ALICLOUD_IDENTITY = fmt.Sprintf("Kubernetes.Alicloud/%s", version
 type Cloud struct {
 	climgr           *ClientMgr
 	cfg              *CloudConfig
-	region           common.Region
 	kubeClient       kubernetes.Interface
 	eventBroadcaster record.EventBroadcaster
 	eventRecorder    record.EventRecorder
@@ -59,20 +55,16 @@ type Cloud struct {
 
 var (
 	// DEFAULT_CHARGE_TYPE default charge type
-	DEFAULT_CHARGE_TYPE = common.PayByTraffic
 
 	// DEFAULT_BANDWIDTH default bandwidth
 	DEFAULT_BANDWIDTH = 100
-
-	// DEFAULT_ADDRESS_TYPE default address type
-	DEFAULT_ADDRESS_TYPE = slb.InternetAddressType
 
 	DEFAULT_NODE_MONITOR_PERIOD = 120 * time.Second
 
 	DEFAULT_NODE_ADDR_SYNC_PERIOD = 240 * time.Second
 
 	// DEFAULT_REGION should be override in cloud initialize.
-	DEFAULT_REGION = common.Hangzhou
+	//DEFAULT_REGION = common.Hangzhou
 )
 
 // CloudConfig is the cloud config
@@ -101,13 +93,13 @@ func init() {
 			var (
 				keyid     = ""
 				keysecret = ""
-				rtableids = ""
+				regionid  = ""
 			)
 			if config != nil {
 				if err := json.NewDecoder(config).Decode(&cfg); err != nil {
 					return nil, err
 				}
-				if cfg.AccessKeyID != "" && cfg.AccessKeySecret != "" {
+				if cfg.AccessKeyID != "" && cfg.AccessKeySecret != "" && cfg.Region != "" {
 					key, err := b64.StdEncoding.DecodeString(cfg.AccessKeyID)
 					if err != nil {
 						return nil, err
@@ -118,7 +110,12 @@ func init() {
 						return nil, err
 					}
 					keysecret = string(secret)
-					glog.V(2).Infof("Alicloud: Try Accesskey and AccessKeySecret from config file.")
+					region, err := b64.StdEncoding.DecodeString(cfg.Region)
+					if err != nil {
+						return nil, err
+					}
+					regionid = string(region)
+					glog.V(2).Infof("Alicloud: Try Accesskey AccessKeySecret and Region from config file.")
 				}
 				if cfg.ClusterID != "" {
 					CLUSTER_ID = cfg.ClusterID
@@ -126,36 +123,29 @@ func init() {
 				}
 			}
 			if keyid == "" || keysecret == "" {
-				glog.V(2).Infof("cloud config does not have keyid and keysecret . try environment ACCESS_KEY_ID ACCESS_KEY_SECRET")
+				glog.V(2).Infof("cloud config does not have keyid and keysecret . try environment ACCESS_KEY_ID ACCESS_KEY_SECRET REGION_ID")
 				keyid = os.Getenv("ACCESS_KEY_ID")
 				keysecret = os.Getenv("ACCESS_KEY_SECRET")
+				regionid = os.Getenv("REGION_ID")
 			}
-			mgr, err := NewClientMgr(keyid, keysecret)
+			mgr, err := NewClientMgr(regionid, keyid, keysecret)
 			if err != nil {
 				return nil, err
 			}
 			// wait for client initialized
-			err = mgr.Start(RefreshToken)
-			if err != nil {
-				panic(fmt.Sprintf("token not ready %s", err.Error()))
-			}
-			return newAliCloud(mgr, rtableids)
+			//err = mgr.Start(RefreshToken)
+			//f err != nil {
+			//	panic(fmt.Sprintf("token not ready %s", err.Error()))
+			//}
+			return newAliCloud(mgr)
 		})
 
 }
 
-func newAliCloud(mgr *ClientMgr, rtableids string) (*Cloud, error) {
-
-	region, err := mgr.MetaData().Region()
-	if err != nil {
-		return nil, errors.New("please provide region in " +
-			"Alicloud configuration file")
-	}
-	DEFAULT_REGION = common.Region(region)
+func newAliCloud(mgr *ClientMgr) (*Cloud, error) {
 
 	return &Cloud{
 		climgr: mgr,
-		region: common.Region(region),
 		cfg:    &cfg,
 	}, nil
 }

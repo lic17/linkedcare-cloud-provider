@@ -1,7 +1,7 @@
 package cloud_provider
 
 import (
-	"github.com/denverdino/aliyungo/ecs"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
 )
 
 type InstanceClient struct {

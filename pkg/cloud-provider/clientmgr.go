@@ -1,76 +1,51 @@
 package cloud_provider
 
 import (
-	"encoding/json"
-	"fmt"
-	"path/filepath"
-	"strings"
-	"time"
-
-	"github.com/denverdino/aliyungo/common"
-	"github.com/denverdino/aliyungo/ecs"
-	"github.com/denverdino/aliyungo/metadata"
-	"github.com/denverdino/aliyungo/slb"
-	"github.com/go-cmd/cmd"
-	"github.com/golang/glog"
-	"k8s.io/apimachinery/pkg/util/wait"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/slb"
 )
 
 // TOKEN_RESYNC_PERIOD default token sync period
-var TOKEN_RESYNC_PERIOD = 10 * time.Minute
+//var TOKEN_RESYNC_PERIOD = 10 * time.Minute
 
 type ClientMgr struct {
 	stop <-chan struct{}
-
-	token TokenAuth
-
-	meta IMetaData
 
 	instance     *InstanceClient
 	loadbalancer *LoadBalancerClient
 }
 
 // NewClientMgr return a new client manager
-func NewClientMgr(key, secret string) (*ClientMgr, error) {
-	m := NewMetaData()
-	region, err := m.Region()
+func NewClientMgr(region, key, secret string) (*ClientMgr, error) {
+	ecsclient, err := ecs.NewClientWithAccessKey(region, key, secret)
 	if err != nil {
-		return nil, fmt.Errorf("can not determin region: %s", err.Error())
+		return nil, err
 	}
-	ecsclient := ecs.NewECSClientWithSecurityToken(key, secret, "", common.Region(region))
+	slbclient, err := slb.NewClientWithAccessKey(region, key, secret)
+	if err != nil {
+		return nil, err
+	}
 	mgr := &ClientMgr{
 		stop: make(<-chan struct{}, 1),
-		meta: m,
 		instance: &InstanceClient{
 			c: ecsclient,
 		},
 		loadbalancer: &LoadBalancerClient{
 			ins: ecsclient,
-			c:   slb.NewSLBClientWithSecurityToken(key, secret, "", common.Region(region)),
+			c:   slbclient,
 		},
 	}
 
-	if key == "" || secret == "" {
-		glog.Infof("alicloud: use ramrole token mode without ak.")
-		mgr.token = &RamRoleToken{meta: m}
-	} else {
-		inittoken := &Token{
-			AccessKey:    key,
-			AccessSecret: secret,
-			UID:          cfg.UID,
-		}
-		if inittoken.UID == "" {
-			glog.Infof("alicloud: ak mode to authenticate user. without token and role assume")
-			mgr.token = &AkAuthToken{ak: inittoken}
-		} else {
-			glog.Infof("alicloud: service account auth mode")
-			mgr.token = &ServiceToken{svcak: inittoken}
-		}
-	}
 	return mgr, nil
 }
 
-func (mgr *ClientMgr) Start(settoken func(mgr *ClientMgr, token *Token) error) error {
+// Instances return instance client
+func (mgr *ClientMgr) Instances() *InstanceClient { return mgr.instance }
+
+// LoadBalancers return loadbalancer client
+func (mgr *ClientMgr) LoadBalancers() *LoadBalancerClient { return mgr.loadbalancer }
+
+/*func (mgr *ClientMgr) Start(settoken func(mgr *ClientMgr, token *Token) error) error {
 	initialized := false
 	tokenfunc := func() {
 		// refresh client token periodically
@@ -120,12 +95,6 @@ func RefreshToken(mgr *ClientMgr, token *Token) error {
 	slbclient.SetUserAgent(KUBERNETES_ALICLOUD_IDENTITY)
 	return nil
 }
-
-// Instances return instance client
-func (mgr *ClientMgr) Instances() *InstanceClient { return mgr.instance }
-
-// LoadBalancers return loadbalancer client
-func (mgr *ClientMgr) LoadBalancers() *LoadBalancerClient { return mgr.loadbalancer }
 
 // Token base token info
 type Token struct {
@@ -306,4 +275,4 @@ func (m *fakeMetaData) RoleName() (string, error) {
 func (m *fakeMetaData) RamRoleToken(role string) (metadata.RoleAuth, error) {
 
 	return m.base.RamRoleToken(role)
-}
+}*/

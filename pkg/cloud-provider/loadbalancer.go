@@ -33,8 +33,8 @@ func (c *Cloud) GetLoadBalancerName(ctx context.Context, clusterName string, ser
 
 func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, nodes []*v1.Node) (*v1.LoadBalancerStatus, error) {
 
-	glog.V(2).Infof("Alicloud.EnsureLoadBalancer(%v, %s/%s, %v, %v)",
-		clusterName, service.Namespace, service.Name, c.region, NodeList(nodes))
+	glog.V(2).Infof("Alicloud.EnsureLoadBalancer(%v, %s/%s, %v)",
+		clusterName, service.Namespace, service.Name, NodeList(nodes))
 	//defaulted, _ := ExtractAnnotationRequest(service)
 	//if defaulted.AddressType == slb.InternetAddressType {
 	//	if c.cfg != nil && c.cfg.Global.DisablePublicSLB {
@@ -72,8 +72,8 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, serv
 }
 
 func (c *Cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, service *v1.Service, nodes []*v1.Node) error {
-	glog.V(2).Infof("Alicloud.UpdateLoadBalancer(%v, %v, %v, %v, %v, %v, %v)",
-		clusterName, service.Namespace, service.Name, c.region, service.Spec.LoadBalancerIP, service.Spec.Ports, NodeList(nodes))
+	glog.V(2).Infof("Alicloud.UpdateLoadBalancer(%v, %v, %v, %v, %v, %v)",
+		clusterName, service.Namespace, service.Name, service.Spec.LoadBalancerIP, service.Spec.Ports, NodeList(nodes))
 	//ns, err := c.fileOutNode(nodes, service)
 	//if err != nil {
 	//	return err
@@ -83,17 +83,8 @@ func (c *Cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, serv
 }
 
 func (c *Cloud) EnsureLoadBalancerDeleted(ctx context.Context, clusterName string, service *v1.Service) error {
-	glog.V(2).Infof("Alicloud.EnsureLoadBalancerDeleted(%v, %v, %v, %v, %v, %v)",
-		clusterName, service.Namespace, service.Name, c.region, service.Spec.LoadBalancerIP, service.Spec.Ports)
-
-	//defaulted, _ := ExtractAnnotationRequest(service)
-
-	//	if len(service.Status.LoadBalancer.Ingress) > 0 {
-	//		err := c.climgr.PrivateZones().EnsurePrivateZoneRecordDeleted(service, service.Status.LoadBalancer.Ingress[0].IP, defaulted.AddressIPVersion)
-	//		if err != nil {
-	//			return err
-	//		}
-	//	}
+	glog.V(2).Infof("Alicloud.EnsureLoadBalancerDeleted(%v, %v, %v, %v, %v)",
+		clusterName, service.Namespace, service.Name, service.Spec.LoadBalancerIP, service.Spec.Ports)
 
 	return c.climgr.LoadBalancers().ensureLoadBalancerDeleted(service)
 

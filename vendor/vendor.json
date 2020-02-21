@@ -1,0 +1,91 @@
+{
+	"comment": "",
+	"ignore": "",
+	"package": [
+		{
+			"checksumSHA1": "jCDN4fzSWJBmgUNr2/jhqlCro6g=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "pRwWbb8gnYPcRqNL61dCqNBAcg8=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "gMLyEdX/idLUCYKZPrYnefTZhrs=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "yNTNSU+TtbKIps57DbZ1jquOajg=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "8XhYsJV/PIDt6ya7jXLtpIoTbgQ=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/credentials/provider",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "slHhSWvwZjB/EiBtBuJVcOJHkcY=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk/auth/signers",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "6GZEowRCZCrXmyxxnPouqy8iUhU=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk/endpoints",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "/S/jHvuevHumYWJXxE8OU1x9EVA=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk/errors",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "rsUSBMpkZ9QeJ/z8yuJPyT2IYhk=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "2e5lSFK5tDjVTzIe9/XCnqw50C4=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk/responses",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "b0yO/etZMrMNLYVfGupJzPRV7sk=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/sdk/utils",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "ca02s8M60e5jsz/cJ5V1CKAcPGs=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/services/ecs",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "2qisxiL2Wq5rrro7hdhwg37rYaE=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/services/slb",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
+			"checksumSHA1": "bXvq1zBRmfvQjomI+NBN9ZaRncM=",
+			"path": "github.com/jmespath/go-jmespath",
+			"revision": "c2b33e8439af944379acbdd9c3a5fe0bc44bd8a5",
+			"revisionTime": "2018-02-06T20:15:40Z"
+		}
+	],
+	"rootPath": "github.com/lic17/linkedcare-cloud-provider"
+}
