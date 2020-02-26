@@ -75,6 +75,7 @@ func (s *InstanceClient) findInstanceByProviderID(providerID string) (*ecs.Descr
 	ins, err := s.getInstance(nodeid)
 	if err != nil {
 		glog.Errorf("alicloud: InstanceInspectError, instanceid=[%s]. message=[%s]\n", providerID, err.Error())
+
 		return nil, err
 	}
 

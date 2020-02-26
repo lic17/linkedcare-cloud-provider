@@ -54,6 +54,7 @@ func (s *LoadBalancerClient) findLoadBalancerByName(service *v1.Service) (bool, 
 		return false, nil, fmt.Errorf("unexpected empty service uid")
 	}
 	name := cloudprovider.GetLoadBalancerName(service)
+	fmt.Println(name)
 
 	request := slb.CreateDescribeLoadBalancersRequest()
 	//request.Scheme = "https"
@@ -76,7 +77,7 @@ func (s *LoadBalancerClient) findLoadBalancerByName(service *v1.Service) (bool, 
 	return err == nil, &lbs[0], err
 }
 
-func (s *LoadBalancerClient) ensureLoadBalancer(service *v1.Service) (bool, *slb.LoadBalancer, error) {
+func (s *LoadBalancerClient) ensureLoadBalancer(service *v1.Service, nodes []*v1.Node) (bool, *slb.LoadBalancer, error) {
 	exists, origined, err := s.findLoadBalancer(service)
 	if err != nil {
 		return false, nil, err
@@ -94,9 +95,85 @@ func (s *LoadBalancerClient) ensureLoadBalancer(service *v1.Service) (bool, *slb
 				"loadbalancer[%s] does not exist. pls check", request.Loadbalancerid)
 		}
 
+		/*Create LoadBalancer*/
+
+		name := cloudprovider.GetLoadBalancerName(service)
+		create_lbs_request := slb.CreateCreateLoadBalancerRequest()
+		//create_lbs_request.Scheme = "https"
+		create_lbs_request.LoadBalancerName = name
+		create_lbs_request.LoadBalancerSpec = "slb.s1.small"
+		create_lbs_request.AddressType = "internet"
+
+		lbs_response, err := s.c.CreateLoadBalancer(create_lbs_request)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		fmt.Println(lbs_response)
+		err = BuildVirturalGroupFromService(s, service, nodes, lbs_response.LoadBalancerId)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+		/*Create Vserver Group for nodes*/
+
+		/*
+			for _, port := range service.Spec.Ports {
+				create_vsg_request := slb.CreateCreateVServerGroupRequest()
+				create_vsg_request.VServerGroupName = service.Namespace + "-" + service.Name
+
+				var servers []VsgBackendServer
+				for _, node := range nodes {
+					server := new(VsgBackendServer)
+					nodeid, err := nodeFromProviderID(node.Spec.ProviderID)
+					if err != nil {
+						fmt.Print(err.Error())
+						break
+					}
+
+					server.ServerId = nodeid
+					server.Weight = "100"
+					server.Type = "ecs"
+					server.Port = strconv.Itoa(int(port.NodePort))
+				    server.Description = "tcp-" + server.Port
+					servers = append(servers, *server)
+				}
+				jsonServers, _ := json.Marshal(servers)
+				//create_vsg_request.Scheme = "https"
+
+				create_vsg_request.BackendServers = string(jsonServers)
+				//create_vsg_request.BackendServers = "[{ \"ServerId\": \"i-xxxxxxxxx\", \"Weight\": \"100\", \"Type\": \"ecs\", \"Port\":\"80\",\"Description\":\"test-112\" }]"
+				create_vsg_request.LoadBalancerId = lbs_response.LoadBalancerId
+
+				vsg_response, err := s.c.CreateVServerGroup(create_vsg_request)
+				if err != nil {
+					fmt.Print(err.Error())
+				}
+				fmt.Println(vsg_response)
+
+				//Create TCPListener of LoadBalancer
+				create_tcp_request := slb.CreateCreateLoadBalancerTCPListenerRequest()
+				//create_tcp_request.Scheme = "https"
+
+				create_tcp_request.VServerGroupId = vsg_response.VServerGroupId
+				create_tcp_request.ListenerPort = requests.Integer(port.Port)
+				create_tcp_request.LoadBalancerId = lbs_response.LoadBalancerId
+				create_tcp_request.BackendServerPort = requests.Integer(port.NodePort)
+
+				tcp_response, err := s.c.CreateLoadBalancerTCPListener(create_tcp_request)
+				if err != nil {
+					fmt.Print(err.Error())
+				}
+				fmt.Println(tcp_response)
+			}
+		*/
+
 		// From here, we need to create a new loadbalancer
 		glog.V(5).Infof("alicloud: can not find a "+
 			"loadbalancer with service name [%s/%s], creating a new one", service.Namespace, service.Name)
+		exists, origined, err := s.findLoadBalancer(service)
+		if err != nil {
+			return false, nil, err
+		}
+		return exists, origined, err
 		// If need created, double check if the resource id has been deleted
 	} else {
 		// Need to verify loadbalancer.
@@ -106,7 +183,28 @@ func (s *LoadBalancerClient) ensureLoadBalancer(service *v1.Service) (bool, *slb
 	return exists, origined, err
 }
 
-func (s *LoadBalancerClient) updateLoadBalancer(service *v1.Service) error {
+func (s *LoadBalancerClient) updateLoadBalancer(service *v1.Service, nodes []*v1.Node) error {
+	exists, lb, err := s.findLoadBalancer(service)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return fmt.Errorf("the loadbalance you specified by name [%s] does not exist", service.Name)
+	}
+
+	err = BuildVirturalGroupFromService(s, service, nodes, lb.LoadBalancerId)
+	if err != nil {
+		return err
+	}
+	//if err := EnsureVirtualGroups(vgs, nodes); err != nil {
+	//	return fmt.Errorf("update backend servers: error %s", err.Error())
+	//}
+
+	//if !needUpdateDefaultBackend(service, lb) {
+	//	return nil
+	//}
+	//utils.Logf(service, "update default backend server group")
+	//return s.UpdateDefaultServerGroup(nodes, lb)
 	return nil
 }
 

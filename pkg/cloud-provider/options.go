@@ -131,3 +131,11 @@ func serviceAnnotation(service *v1.Service, annotate string) string {
 	}
 	return ""
 }
+
+type VsgBackendServer struct {
+	ServerId    string `json: "ServerId"`
+	Weight      string `json:"Weight"`
+	Type        string `json:"Type"`
+	Port        string `json:"Port"`
+	Description string `json:"Description"`
+}

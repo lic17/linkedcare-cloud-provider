@@ -22,8 +22,8 @@ import (
 
 func NewMockClientInstanceMgr() (*ClientMgr, error) {
 
-	keyid := "xxxxxxxxxxx"
-	keysecret := "xxxxxxxxxxxxxxxxxx"
+	keyid := "XXXXXXXXXXXXXXXXXX"
+	keysecret := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 	regionid := "cn-hangzhou"
 
 	mgr, err := NewClientMgr(regionid, keyid, keysecret)
@@ -42,8 +42,8 @@ func TestInstanceRefeshInstance(t *testing.T) {
 		t.Fatal(fmt.Sprintf("create client manager fail. [%s]\n", err.Error()))
 	}
 
-	instanceid := "i-xxxxxxxxxxxxxxxxxxxx"
-	providerid := "cn-hangzhou.i-xxxxxxxxxxxxxxxxxxxxxxx"
+	instanceid := "i-bp15ekjuuvrwuxjowxcc"
+	providerid := "cn-hangzhou.i-bp15ekjuuvrwuxjowxcc"
 
 	//test getInstance
 	ins, err := mgr.Instances().getInstance(instanceid)
@@ -66,7 +66,7 @@ func TestInstanceRefeshInstance(t *testing.T) {
 	}
 	fmt.Println(ips)
 
-	providerid = "cn-hangzhou.i-xxxxxxxxxxxxxxxxxxx"
+	providerid = "cn-hangzhou.i-bp15ekjuuvrwuxjowxcc"
 	insa, err = mgr.Instances().findInstanceByProviderID(providerid)
 	if err != nil {
 		t.Fatal(fmt.Sprintf("findInstanceByNode error: %s\n", err.Error()))

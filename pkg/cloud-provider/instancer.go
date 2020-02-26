@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 
+	ali_errors "github.com/aliyun/alibaba-cloud-sdk-go/sdk/errors"
+
 	"github.com/golang/glog"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
@@ -26,6 +28,12 @@ func (c *Cloud) NodeAddressesByProviderID(ctx context.Context, providerID string
 func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID string) (bool, error) {
 	_, err := c.climgr.Instances().findInstanceByProviderID(providerID)
 	if err != nil {
+		if serverError, ok := err.(*ali_errors.ServerError); ok {
+			glog.Errorf("error code[%s]\n", serverError.ErrorCode())
+			if serverError.ErrorCode() == "InvalidInstanceId.NotFound" {
+				return false, nil
+			}
+		}
 		return false, err
 	}
 	return true, nil

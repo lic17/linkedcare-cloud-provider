@@ -51,24 +51,28 @@ func (c *Cloud) EnsureLoadBalancer(ctx context.Context, clusterName string, serv
 		return nil, fmt.Errorf("requested load balancer with no ports")
 	}
 
-	_, lb, err := c.climgr.LoadBalancers().ensureLoadBalancer(service)
+	exists, lb, err := c.climgr.LoadBalancers().ensureLoadBalancer(service, nodes)
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(lb)
+	if exists {
+		fmt.Println(lb)
 
-	//pz, pzr, err := c.climgr.PrivateZones().EnsurePrivateZoneRecord(service, lb.Address, defaulted.AddressIPVersion)
-	//if err != nil {
-	//	return nil, err
-	//}
+		//pz, pzr, err := c.climgr.PrivateZones().EnsurePrivateZoneRecord(service, lb.Address, defaulted.AddressIPVersion)
+		//if err != nil {
+		//	return nil, err
+		//}
 
-	return &v1.LoadBalancerStatus{
-		Ingress: []v1.LoadBalancerIngress{
-			{
-				IP: lb.Address,
+		return &v1.LoadBalancerStatus{
+			Ingress: []v1.LoadBalancerIngress{
+				{
+					IP: lb.Address,
+				},
 			},
-		},
-	}, nil
+		}, nil
+	} else {
+		return nil, nil
+	}
 
 }
 
@@ -79,7 +83,7 @@ func (c *Cloud) UpdateLoadBalancer(ctx context.Context, clusterName string, serv
 	//if err != nil {
 	//	return err
 	//}
-	return c.climgr.LoadBalancers().updateLoadBalancer(service)
+	return c.climgr.LoadBalancers().updateLoadBalancer(service, nodes)
 
 }
 
