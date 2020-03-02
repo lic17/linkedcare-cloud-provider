@@ -2,6 +2,7 @@ package cloud_provider
 
 import (
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/nas"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/slb"
 )
 
@@ -22,10 +23,15 @@ func NewClientMgr(region, key, secret string) (*ClientMgr, error) {
 	if err != nil {
 		return nil, err
 	}
+	nasclient, err := nas.NewClientWithAccessKey(region, key, secret)
+	if err != nil {
+		return nil, err
+	}
 	mgr := &ClientMgr{
 		stop: make(<-chan struct{}, 1),
 		instance: &InstanceClient{
-			c: ecsclient,
+			c:   ecsclient,
+			nas: nasclient,
 		},
 		loadbalancer: &LoadBalancerClient{
 			ins: ecsclient,

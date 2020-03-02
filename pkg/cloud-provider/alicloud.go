@@ -132,12 +132,6 @@ func init() {
 			if err != nil {
 				return nil, err
 			}
-			// wait for client initialized
-			//err = mgr.Start(RefreshToken)
-			//f err != nil {
-			//	panic(fmt.Sprintf("token not ready %s", err.Error()))
-			//}
-			fmt.Println(mgr)
 			return newAliCloud(mgr)
 		})
 

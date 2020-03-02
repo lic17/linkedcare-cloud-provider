@@ -25,12 +25,14 @@ func (c *Cloud) NodeAddressesByProviderID(ctx context.Context, providerID string
 	return c.climgr.Instances().findAddressByProviderID(providerID)
 }
 
-func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID string) (bool, error) {
+func (c *Cloud) InstanceExistsByProviderID(ctx context.Context, providerID string, ip string) (bool, error) {
 	_, err := c.climgr.Instances().findInstanceByProviderID(providerID)
 	if err != nil {
 		if serverError, ok := err.(*ali_errors.ServerError); ok {
 			glog.Errorf("error code[%s]\n", serverError.ErrorCode())
 			if serverError.ErrorCode() == "InvalidInstanceId.NotFound" {
+
+				c.climgr.Instances().deleteNasAccessRuleByIP(ip)
 				return false, nil
 			}
 		}

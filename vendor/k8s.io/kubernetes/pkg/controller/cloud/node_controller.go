@@ -24,7 +24,7 @@ import (
 
 	"github.com/golang/glog"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/types"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -460,8 +460,15 @@ func ensureNodeExistsByProviderID(instances cloudprovider.Instances, node *v1.No
 			return false, nil
 		}
 	}
+	ip := ""
+	for _, addr := range node.Status.Addresses {
+		if addr.Type == v1.NodeInternalIP {
+			ip = addr.Address
+			break
+		}
+	}
 
-	return instances.InstanceExistsByProviderID(context.TODO(), providerID)
+	return instances.InstanceExistsByProviderID(context.TODO(), providerID, ip)
 }
 
 func getNodeAddressesByProviderIDOrName(instances cloudprovider.Instances, node *v1.Node) ([]v1.NodeAddress, error) {

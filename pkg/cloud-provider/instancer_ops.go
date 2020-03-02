@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aliyun/alibaba-cloud-sdk-go/sdk/requests"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/ecs"
+	"github.com/aliyun/alibaba-cloud-sdk-go/services/nas"
 	"github.com/golang/glog"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 )
 
 type InstanceClient struct {
-	c *ecs.Client
+	c   *ecs.Client
+	nas *nas.Client
 }
 
 func (s *InstanceClient) findAddressByNodeName(nodeName types.NodeName) ([]v1.NodeAddress, error) {
@@ -104,4 +107,77 @@ func nodeFromProviderID(providerID string) (string, error) {
 		return "", fmt.Errorf("alicloud: unable to split instanceid and region from providerID, error unexpected providerID=%s", providerID)
 	}
 	return name[1], nil
+}
+
+func (s *InstanceClient) deleteNasAccessRuleByIP(ip string) {
+	ids, _ := s.getNasAccessRule(ip)
+	for _, id := range ids {
+		err := s.deleteNasAccessRuleById(id)
+		if err != nil {
+			fmt.Print(err.Error())
+		}
+	}
+}
+
+func (s *InstanceClient) deleteNasAccessRuleById(id string) error {
+	request := nas.CreateDeleteAccessRuleRequest()
+	//	request.Scheme = "https"
+
+	request.AccessRuleId = id
+	request.AccessGroupName = "Kubernetes"
+
+	_, err := s.nas.DeleteAccessRule(request)
+	if err != nil {
+		fmt.Print(err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (s *InstanceClient) getNasAccessRule(ip string) ([]string, error) {
+	var ids []string
+	request := nas.CreateDescribeAccessRulesRequest()
+	//	request.Scheme = "https"
+	request.AccessGroupName = "Kubernetes"
+	request.PageSize = requests.NewInteger(100)
+	request.PageNumber = requests.NewInteger(1)
+	response1, err := s.nas.DescribeAccessRules(request)
+	if err != nil {
+		fmt.Print(err.Error())
+		return ids, err
+	}
+	for _, rule := range response1.AccessRules.AccessRule {
+		if rule.SourceCidrIp == ip+"/32" {
+			ids = append(ids, rule.AccessRuleId)
+		}
+	}
+	if response1.TotalCount > 100 {
+		request.PageNumber = requests.NewInteger(2)
+		response2, err := s.nas.DescribeAccessRules(request)
+		if err != nil {
+			fmt.Print(err.Error())
+		} else {
+			for _, rule := range response2.AccessRules.AccessRule {
+				if rule.SourceCidrIp == ip+"/32" {
+					ids = append(ids, rule.AccessRuleId)
+				}
+			}
+		}
+	}
+	if response1.TotalCount > 200 {
+		request.PageNumber = requests.NewInteger(3)
+		response3, err := s.nas.DescribeAccessRules(request)
+		if err != nil {
+			fmt.Print(err.Error())
+		} else {
+			for _, rule := range response3.AccessRules.AccessRule {
+				if rule.SourceCidrIp == ip+"/32" {
+					ids = append(ids, rule.AccessRuleId)
+				}
+			}
+		}
+	}
+
+	return ids, nil
 }

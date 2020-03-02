@@ -75,6 +75,12 @@
 			"revisionTime": "2020-02-15T12:00:42Z"
 		},
 		{
+			"checksumSHA1": "gPUNXTmNS+AQZIPs6HO2PFZnRLU=",
+			"path": "github.com/aliyun/alibaba-cloud-sdk-go/services/nas",
+			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",
+			"revisionTime": "2020-02-15T12:00:42Z"
+		},
+		{
 			"checksumSHA1": "2qisxiL2Wq5rrro7hdhwg37rYaE=",
 			"path": "github.com/aliyun/alibaba-cloud-sdk-go/services/slb",
 			"revision": "a132b68fef8268296a405680cd4acbc758ebdac4",

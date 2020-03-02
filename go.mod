@@ -12,7 +12,6 @@ require (
 	github.com/coreos/go-semver v0.2.0
 	github.com/coreos/go-systemd v0.0.0-20181031085051-9002847aa142
 	github.com/davecgh/go-spew v1.1.1
-	github.com/denverdino/aliyungo v0.0.0-20200218120134-f6c3b44a273b // indirect
 	github.com/docker/distribution v0.0.0-20170726174610-edc3ab29cdff
 	github.com/elazarl/go-bindata-assetfs v1.0.0
 	github.com/emicklei/go-restful v2.8.0+incompatible

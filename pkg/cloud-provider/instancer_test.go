@@ -22,8 +22,6 @@ import (
 
 func NewMockClientInstanceMgr() (*ClientMgr, error) {
 
-	keyid := "XXXXXXXXXXXXXXXXXX"
-	keysecret := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 	regionid := "cn-hangzhou"
 
 	mgr, err := NewClientMgr(regionid, keyid, keysecret)
@@ -72,4 +70,11 @@ func TestInstanceRefeshInstance(t *testing.T) {
 		t.Fatal(fmt.Sprintf("findInstanceByNode error: %s\n", err.Error()))
 	}
 	fmt.Println(insa)
+
+	ids, _ := mgr.Instances().getNasAccessRule("10.26.196.24")
+	if err != nil {
+		t.Fatal(fmt.Sprintf("getNasAccessRule error: %s\n", err.Error()))
+	}
+
+	fmt.Println(ids)
 }

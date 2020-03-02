@@ -22,7 +22,7 @@ import (
 	"fmt"
 	"strings"
 
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/informers"
 	"k8s.io/kubernetes/pkg/controller"
@@ -145,7 +145,7 @@ type Instances interface {
 	CurrentNodeName(ctx context.Context, hostname string) (types.NodeName, error)
 	// InstanceExistsByProviderID returns true if the instance for the given provider id still is running.
 	// If false is returned with no error, the instance will be immediately deleted by the cloud controller manager.
-	InstanceExistsByProviderID(ctx context.Context, providerID string) (bool, error)
+	InstanceExistsByProviderID(ctx context.Context, providerID string, ip string) (bool, error)
 	// InstanceShutdownByProviderID returns true if the instance is shutdown in cloudprovider
 	InstanceShutdownByProviderID(ctx context.Context, providerID string) (bool, error)
 }

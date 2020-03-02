@@ -26,8 +26,6 @@ import (
 
 func NewMockClientLoadBalancerMgr() (*ClientMgr, error) {
 
-	keyid := "XXXXXXXXXXXXXXX"
-	keysecret := "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX"
 	regionid := "cn-hangzhou"
 
 	mgr, err := NewClientMgr(regionid, keyid, keysecret)
@@ -57,15 +55,15 @@ func TestLoadBalancer(t *testing.T) {
 			Type: "LoadBalancer",
 		},
 	}
-	prid := "cn-hangzhou.i-bp15ekjuuvrwuxjowxcc"
-	node := []*v1.Node{
+	//prid := "cn-hangzhou.i-bp15ekjuuvrwuxjowxcc"
+	/*node := []*v1.Node{
 		{
 			ObjectMeta: metav1.ObjectMeta{Name: prid},
 			Spec: v1.NodeSpec{
 				ProviderID: prid,
 			},
 		},
-	}
+	}*/
 	//test findLoadBalancer
 	exists, lbs, err := mgr.LoadBalancers().findLoadBalancer(service)
 	if err != nil {
@@ -93,7 +91,7 @@ func TestLoadBalancer(t *testing.T) {
 		fmt.Println("findLoadBalancer by id: no loadbalancer")
 	}
 
-	//test ensureLoadBalancer
+	/*test ensureLoadBalancer
 	exists, lbs, err = mgr.LoadBalancers().ensureLoadBalancer(service, node)
 	if err != nil {
 		t.Errorf("ensureLoadBalancer error: %s\n", err.Error())
@@ -102,5 +100,5 @@ func TestLoadBalancer(t *testing.T) {
 		fmt.Println("ensureLoadBalancer:", lbs)
 	} else {
 		fmt.Println("ensureLoadBalancer: no loadbalancer")
-	}
+	}*/
 }
